@@ -39,7 +39,7 @@ function init() {
 
     function fill(id) {
         for(let i = 1; i < 21; i++) {
-            const radios = document.querySelectorAll(`#radio${i}`); // radio20: nunca, radio20: asas, radio20: asd, radio20 : siempre   
+            const radios = document.querySelectorAll(`#radio${i}`);
             let prob = Math.floor((Math.random())*2); // 0 o 1
             if (prob === 0){
                 radios[parseInt(id)].checked = true;
@@ -65,5 +65,7 @@ function init() {
         radios.forEach(e => {
             e.checked = false;
         })
+        const inputNumber = document.querySelector("input[type='number'][id='calificacion']");
+        inputNumber.value = "";
     }
 }
