@@ -38,17 +38,27 @@ function init() {
     });
 
     function fill(id) {
-        for(let i = 1; i < 22; i++) {
-            const radios = document.querySelectorAll(`#radio${i}`);
-            let prob = Math.floor((Math.random())*2);
+        for(let i = 1; i < 21; i++) {
+            const radios = document.querySelectorAll(`#radio${i}`); // radio20: nunca, radio20: asas, radio20: asd, radio20 : siempre   
+            let prob = Math.floor((Math.random())*2); // 0 o 1
             if (prob === 0){
                 radios[parseInt(id)].checked = true;
             }else{
                 radios[parseInt(id)+1].checked = true;
             }
-            
             //console.log(e.value);    
         }
+
+        // Calificacion
+        const inputNumber = document.querySelector("input[type='number'][id='calificacion']");
+        if (parseInt(id) === 2){ // 15-19
+            inputNumber.value = Math.floor((Math.random()*6)+15);
+        }else if (parseInt(id) === 1){ // 10-14
+            inputNumber.value = Math.floor((Math.random()*5)+10);
+        } else if (parseInt(id) === 0){ // 4-8
+            inputNumber.value = Math.floor((Math.random()*5)+4);
+        }
+
     }
     function clear(){
         const radios = document.querySelectorAll("input[type='radio']");
