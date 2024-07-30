@@ -8,9 +8,10 @@ function init() {
     btnCali.addEventListener('click', function (e) {
         e.preventDefault();
         const radio = document.querySelectorAll("input[type='radio'][name='radio']")
+        const nota = document.getElementById("nota")
         radio.forEach(e => {
             if(e.checked){
-                calificacion= e.id;
+                calificacion = e.id;
             }
         })
 
@@ -58,7 +59,6 @@ function init() {
         } else if (parseInt(id) === 0){ // 4-8
             inputNumber.value = Math.floor((Math.random()*5)+4);
         }
-
     }
     function clear(){
         const radios = document.querySelectorAll("input[type='radio']");
