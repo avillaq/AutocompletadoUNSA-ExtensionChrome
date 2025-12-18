@@ -1,9 +1,71 @@
+@font-face {
+    font-display: swap;
+    font-family: 'Nunito Sans';
+    font-style: normal;
+    font-weight: 400;
+    src: url('../fonts/nunito-sans-v19-latin-regular.woff2') format('woff2');
+}
+
+@font-face {
+    font-display: swap;
+    font-family: 'Nunito Sans';
+    font-style: normal;
+    font-weight: 500;
+    src: url('../fonts/nunito-sans-v19-latin-500.woff2') format('woff2');
+}
+
+@font-face {
+    font-display: swap;
+    font-family: 'Nunito Sans';
+    font-style: normal;
+    font-weight: 600;
+    src: url('../fonts/nunito-sans-v19-latin-600.woff2') format('woff2');
+}
+
+@font-face {
+    font-display: swap;
+    font-family: 'Nunito Sans';
+    font-style: normal;
+    font-weight: 700;
+    src: url('../fonts/nunito-sans-v19-latin-700.woff2') format('woff2');
+}
+
 body {
-    font-family: Verdana, Tahoma, sans-serif;
+    font-family: 'Nunito Sans', sans-serif, system-ui, Arial, Helvetica;
     margin: 0;
     padding: 0;
     background-color: #ffffff;
-    width: 230px;
+    width: 300px;
+    height: auto;
+    max-height: 500px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+}
+
+/* Estilo personalizado para la scrollbar */
+body::-webkit-scrollbar {
+    width: 6px;
+}
+
+body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+body::-webkit-scrollbar-thumb {
+    background: #64001d;
+    border-radius: 3px;
+    opacity: 0.7;
+}
+
+body::-webkit-scrollbar-thumb:hover {
+    background: #4a0015;
+}
+
+button, input, select, label {
+    font-family: 'Nunito Sans', sans-serif, system-ui, Arial, Helvetica !important;
 }
 
 /* Header side */
@@ -11,8 +73,9 @@ body {
     display: flex;
     justify-content: space-around;
     align-items: center;
-    padding: 10px 0;
+    padding: 8px 0;
     background-color: #64001d;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 .header p {
     font-family: inherit;
@@ -20,57 +83,29 @@ body {
     display: inline-block;
     font-size: 18px;
     margin: 0;
+    font-weight: 600;
 }
-/* Icono de ! */
+
+main {
+    font-size: 14px;
+    flex: 1;
+    padding: 8px 0;
+}
+
+main p {
+    text-align: center;
+    font-weight: bold;
+    margin: 6px 10px;
+    color: #232c3b;
+}
+
 .info {
-    width: 25px;
-    height: 25px;
     text-align: center;
     border: 2px solid #fff;
     border-radius: 50%;
 }
 
-/*Contenedor del tooltip*/
-.tooltip {
-    position: relative;
-    display: inline-block;
-}
-/*Ventana de texto oculta*/
-.tooltip .tooltiptext {
-    visibility: hidden;
-    width: 150px;
-    background-color: #555;
-    color: #fff;
-    text-align: center;
-    border-radius: 6px;
-    padding: 5px 0;
-    position: absolute;
-    z-index: 1;
-    top: 125%;
-    left: 50%;
-    margin-left: -115px;
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-/*indicador de la ventada */
-.tooltip .tooltiptext::before {
-    content: "";
-    position: absolute;
-    bottom: 100%;
-    right: 20%;
-    transform: rotate(180deg);
-    margin-left: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: #555 transparent transparent transparent;
-}
-
-.tooltip:hover .tooltiptext {
-    visibility: visible;
-    opacity: 1;
-}
-
-.container {
+.checkbox-container {
     background-color: #ffffff;
     display: flex;
     align-items: center;
@@ -79,7 +114,6 @@ body {
     transition: all .2s ease-in-out;
     margin: 7px 0;
 }
-
 
 /*Botones -> Calificar - Limpiar*/
 .container-btn {
@@ -103,18 +137,55 @@ body {
 }
 
 /* Footer*/
-footer p {
-    margin: 0;
-    text-align: center;
-    padding: 7px 0 9px 0;
+footer {
+    margin-top: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 8px 0;
+    gap: 8px;
     color: #fff;
     background-color: #64001d;
+}
 
-    a {
-        display: inline-block;
-        margin-left: 8px;
-        color: #fff;
-        text-decoration: none;
-        font-size: 16px;
-    }
+footer p {
+    margin: 0;
+    font-size: 12px;
+}
+
+footer a {
+    display: flex;
+    align-items: center;
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+    transition: transform 0.2s ease;
+}
+
+footer a:hover {
+    transform: scale(1.1);
+}
+
+/* estilos cuando no hay encuestas */
+.no-encuesta-container {
+    padding: 10px 10px;
+    text-align: center;
+}
+
+.no-encuesta-message {
+    background-color: #f7fafc;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 16px;
+    color: #4a5568;
+    font-size: 13px;
+    text-align: left;
+}
+
+.no-encuesta-message i {
+    display: block;
+    font-size: 24px;
+    color: #64001d;
+    margin-bottom: 8px;
 }

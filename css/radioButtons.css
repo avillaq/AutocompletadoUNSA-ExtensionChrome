@@ -1,10 +1,10 @@
-.container form {
+.checkbox-container form {
   display: flex;
   flex-wrap: wrap;
   flex-direction: column;
 }
 
-.container label {
+.checkbox-container label {
   display: flex;
   cursor: pointer;
   font-weight: 500;
@@ -13,21 +13,21 @@
   margin-bottom: 0.375em;
 }
 
-.container  label input {
+.checkbox-container  label input {
   position: absolute;
   left: -9999px;
 }
 
-.container label input:checked + span {
+.checkbox-container label input:checked + span {
   background-color: #b40135;
   color: white;
 }
 
-.container label input:checked + span:before {
+.checkbox-container label input:checked + span:before {
   box-shadow: inset 0 0 0 0.4375em #64001d;
 }
 
-.container label span {
+.checkbox-container label span {
   display: flex;
   align-items: center;
   padding: 0.375em 0.75em 0.375em 0.375em;
@@ -36,11 +36,11 @@
   color: #414181;
 }
 
-.container label span:hover {
+.checkbox-container label span:hover {
   background-color: #d6d6e5;
 }
 
-.container label span:before {
+.checkbox-container label span:before {
   display: flex;
   flex-shrink: 0;
   content: "";
