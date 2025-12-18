@@ -84,6 +84,11 @@ async function init() {
         const btnLimp = document.querySelector("#btnLimp");
         btnLimp.addEventListener('click', function (e) {
             e.preventDefault();
+            const radio = document.querySelectorAll("input[type='radio'][name='radio']")
+            radio.forEach(e => {
+                e.checked = false;
+            })
+
             chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
                 chrome.scripting.executeScript({
                     target: { tabId: tabs[0].id },
@@ -96,17 +101,18 @@ async function init() {
     function fill(id) {
         for (let i = 1; i < 21; i++) {
             const radios = document.querySelectorAll(`#radio${i}`);
+            if (radios.length === 0) continue;
             let prob = Math.floor((Math.random()) * 2); // 0 o 1
             if (prob === 0) {
                 radios[parseInt(id)].checked = true;
             } else {
                 radios[parseInt(id) + 1].checked = true;
-            }
-            //console.log(e.value);    
+            }  
         }
 
         // Calificacion
         const inputNumber = document.querySelector("input[type='number'][id='calificacion']");
+        if (!inputNumber) return;
         if (parseInt(id) === 2) { // 15-19
             inputNumber.value = Math.floor((Math.random() * 6) + 15);
         } else if (parseInt(id) === 1) { // 10-14
@@ -119,10 +125,12 @@ async function init() {
 
     function clear() {
         const radios = document.querySelectorAll("input[type='radio']");
+        if (!radios) return;
         radios.forEach(e => {
             e.checked = false;
         })
         const inputNumber = document.querySelector("input[type='number'][id='calificacion']");
+        if (!inputNumber) return;
         inputNumber.value = "";
     }
 
