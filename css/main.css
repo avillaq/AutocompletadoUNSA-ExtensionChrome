@@ -99,10 +99,45 @@ main p {
     color: #232c3b;
 }
 
-.info {
+/* estilos cuando no hay encuestas */
+.no-encuesta-container, .content-container {
+    padding: 20px 10px;
     text-align: center;
-    border: 2px solid #fff;
-    border-radius: 50%;
+}
+
+.no-encuesta-message, .instrucciones {
+    background-color: #f7fafc;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 16px;
+    color: #4a5568;
+    font-size: 13px;
+    text-align: center;
+}
+
+/* estilos cuando si hay encuestas  */
+
+.content-container {
+    padding: 10px;
+}
+
+.instrucciones {
+    text-align: left;
+}
+
+.separador-opciones {
+    margin: 14px 10px 7px 10px;
+    padding: 8px 0;
+    border-top: 1px solid #cbd5e0;
+    text-align: center;
+}
+
+.separador-opciones::before {
+    content: 'Opciones de calificación';
+    font-size: 12px;
+    color: #4f5b6d;
+    font-weight: 500;
 }
 
 .checkbox-container {
@@ -116,7 +151,7 @@ main p {
 }
 
 /*Botones -> Calificar - Limpiar*/
-.container-btn {
+.acciones-container {
     display: flex;
     justify-content: space-evenly;
     margin: 10px 0 10px 0;
@@ -126,14 +161,35 @@ main p {
     text-decoration: none;
     color: #fff;
     display: inline-block;
-    padding: 7px;
+    padding: 8px 10px;
     background-color: #272727;
-    border-radius: 5px;
+    border-radius: 3px;
+    cursor: pointer;
+    margin-top: 6px;
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
 }
 
 /*Efecto al ser precionado los botones*/
 .btn:active {
-    transform: scale(0.95);
+    transform: scale(0.96);
+}
+
+.btn:hover {
+    background-color: #1a1a1a;
+}
+
+.btn-calificar {
+    background-color: #0d6efd;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.btn-calificar:hover {
+    background-color: #0b5ed7;
 }
 
 /* Footer*/
@@ -164,28 +220,4 @@ footer a {
 
 footer a:hover {
     transform: scale(1.1);
-}
-
-/* estilos cuando no hay encuestas */
-.no-encuesta-container {
-    padding: 10px 10px;
-    text-align: center;
-}
-
-.no-encuesta-message {
-    background-color: #f7fafc;
-    border: 1px solid #cbd5e0;
-    border-radius: 6px;
-    padding: 16px;
-    margin-bottom: 16px;
-    color: #4a5568;
-    font-size: 13px;
-    text-align: left;
-}
-
-.no-encuesta-message i {
-    display: block;
-    font-size: 24px;
-    color: #64001d;
-    margin-bottom: 8px;
 }
