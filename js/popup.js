@@ -1,5 +1,32 @@
 document.addEventListener('DOMContentLoaded', init);
 
+const PROFILES = [
+    {
+        id: 'muy-bueno',
+        label: 'Muy bueno',
+        distribution: [2, 15, 43, 40],
+        gradeRange: [17, 20]
+    },
+    {
+        id: 'bueno',
+        label: 'Bueno',
+        distribution: [5, 25, 45, 25],
+        gradeRange: [12, 16]
+    },
+    {
+        id: 'regular',
+        label: 'Regular',
+        distribution: [20, 45, 28, 7],
+        gradeRange: [6, 11]
+    },
+    {
+        id: 'pesimo',
+        label: 'Pesimo',
+        distribution: [60, 30, 8, 2],
+        gradeRange: [1, 5]
+    },
+];
+
 function isSurveyUrl(url) {
     try {
         const parsedUrl = new URL(url);
@@ -37,6 +64,13 @@ async function init() {
         }
 
         tituloEncuesta.innerHTML = '<p>Encuesta detectada</p>';
+        const profilesHtml = PROFILES.map((profile, index) => `
+            <label>
+                <input type="radio" name="radio" value="${profile.id}" ${index === 0 ? 'checked' : ''}>
+                <span>${profile.label}</span>
+            </label>
+        `).join('');
+
         container.innerHTML = `
             <div class="content-container">
                 <div class="instrucciones">
@@ -45,25 +79,14 @@ async function init() {
                 <div class="separador-opciones"></div>
                 <div class="checkbox-container">
                     <form>
-                        <label>
-                            <input type="radio" name="radio" id="2">
-                            <span>Excelente</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="radio" id="1">
-                            <span>Bueno</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="radio" id="0">
-                            <span>Pesimo</span>
-                        </label>
+                        ${profilesHtml}
                     </form>
                 </div>
 
                 <div class="acciones-container">
                     <button class="btn btn-calificar" id="btnCali">Calificar</button>
                     <button class="btn btn-limpiar" id="btnLimp">Limpiar</button>
-                    <button class="btn" id="btnGuardarSeguro">Guardar</button>
+                    <button class="btn" id="btnGuardarSeguro">Enviar</button>
                 </div>
                 <p id="estado-formulario" style="font-size:11px;margin:2px 10px 0 10px;color:#4a5568;"></p>
             </div>
@@ -84,7 +107,7 @@ async function init() {
     function obtenerCalificacionSeleccionada() {
         const radios = document.querySelectorAll("input[type='radio'][name='radio']");
         for (const radio of radios) {
-            if (radio.checked) return radio.id;
+            if (radio.checked) return radio.value;
         }
         return null;
     }
@@ -118,19 +141,25 @@ async function init() {
     function activarBotonCalificar() {
         const btnCali = document.querySelector('#btnCali');
         btnCali.addEventListener('click', function () {
-            const calificacion = obtenerCalificacionSeleccionada();
-            if (calificacion == null) {
+            const selectedProfileId = obtenerCalificacionSeleccionada();
+            if (selectedProfileId == null) {
                 setEstado('Selecciona una calificacion antes de llenar.', true);
                 return;
             }
 
-            executeOnActiveTab(injectedFill, [calificacion], (result) => {
+            const selectedProfile = PROFILES.find((profile) => profile.id === selectedProfileId);
+            if (!selectedProfile) {
+                setEstado('Perfil no valido.', true);
+                return;
+            }
+
+            executeOnActiveTab(injectedFill, [selectedProfile], (result) => {
                 if (!result) {
                     setEstado('No se pudo llenar la encuesta.', true);
                     return;
                 }
                 if (result.ok) {
-                    setEstado(`Encuesta llenada: ${result.answered}/${result.total} preguntas y nota ${result.grade}.`);
+                    setEstado(`Perfil ${selectedProfile.label}: ${result.answered}/${result.total} preguntas y nota ${result.grade}.`);
                 } else {
                     setEstado(result.message || 'La encuesta no se pudo llenar por completo.', true);
                 }
@@ -162,7 +191,7 @@ async function init() {
                 }
 
                 if (result.ok) {
-                    setEstado(`Formulario completo (${result.answered}/${result.total}). Guardando...`);
+                    setEstado(`Formulario completo (${result.answered}/${result.total}). Enviando...`);
                     return;
                 }
 
@@ -170,14 +199,14 @@ async function init() {
                     ? ` Faltan ${result.missing} pregunta(s).`
                     : '';
                 const mensajeNota = result.gradeValid ? '' : ' La nota (0-20) es invalida.';
-                setEstado(`No se guardo.${mensajeFaltantes}${mensajeNota}`, true);
+                setEstado(`No se envio.${mensajeFaltantes}${mensajeNota}`, true);
             });
         });
     }
 
 }
 
-function injectedFill(profileId) {
+function injectedFill(profile) {
     function collectSurveyGroups() {
         const radios = document.querySelectorAll("input[type='radio'][name^='radio']");
         const groups = {};
@@ -195,33 +224,54 @@ function injectedFill(profileId) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
-    function pickOptionIndexes(id) {
-        const profile = parseInt(id, 10);
-        if (profile === 2) return [2, 3];
-        if (profile === 1) return [1, 2];
-        return [0, 1];
+    function normalizeDistribution(distribution) {
+        if (!Array.isArray(distribution) || distribution.length !== 4) return [10, 20, 35, 35];
+
+        const parsed = distribution.map((value) => Number(value));
+        const valid = parsed.every((value) => Number.isFinite(value) && value >= 0);
+        if (!valid) return [10, 20, 35, 35];
+
+        const total = parsed.reduce((acc, value) => acc + value, 0);
+        if (total <= 0) return [10, 20, 35, 35];
+
+        return parsed.map((value) => value / total);
+    }
+
+    function pickWeightedIndex(weights) {
+        const roll = Math.random();
+        let accumulator = 0;
+
+        for (let i = 0; i < weights.length; i++) {
+            accumulator += weights[i];
+            if (roll <= accumulator) return i;
+        }
+
+        return weights.length - 1;
     }
 
     const groups = collectSurveyGroups();
     if (groups.length === 0) return { ok: false, message: 'No se encontraron preguntas en la encuesta.' };
 
-    const optionIndexes = pickOptionIndexes(profileId);
+    const weights = normalizeDistribution(profile?.distribution);
 
     groups.forEach((group) => {
-        const [indexA, indexB] = optionIndexes;
-        const selectedIndex = Math.random() < 0.5 ? indexA : indexB;
+        const selectedIndex = pickWeightedIndex(weights);
         const safeIndex = Math.min(selectedIndex, group.length - 1);
         group[safeIndex].checked = true;
     });
 
     const inputNumber = document.querySelector("input[type='number'][id='calificacion']");
     let grade = null;
-    const numericProfile = parseInt(profileId, 10);
+    const gradeMin = Number(profile?.gradeRange?.[0]);
+    const gradeMax = Number(profile?.gradeRange?.[1]);
+    const hasValidRange = Number.isFinite(gradeMin) && Number.isFinite(gradeMax) && gradeMin <= gradeMax;
 
     if (inputNumber) {
-        if (numericProfile === 2) grade = randomFromRange(15, 20);
-        if (numericProfile === 1) grade = randomFromRange(10, 14);
-        if (numericProfile === 0) grade = randomFromRange(4, 8);
+        if (hasValidRange) {
+            grade = randomFromRange(gradeMin, gradeMax);
+        } else {
+            grade = randomFromRange(10, 16);
+        }
         if (grade !== null) inputNumber.value = grade;
     }
 

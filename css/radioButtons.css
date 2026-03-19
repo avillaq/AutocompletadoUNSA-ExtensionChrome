@@ -30,10 +30,11 @@
 .checkbox-container label span {
   display: flex;
   align-items: center;
-  padding: 0.375em 0.75em 0.375em 0.375em;
+  padding: 0.32em 0.6em 0.32em 0.32em;
   border-radius: 99em;
   transition: 0.25s ease;
   color: #414181;
+  font-size: 13px;
 }
 
 .checkbox-container label span:hover {
