@@ -41,6 +41,7 @@ function isSurveyUrl(url) {
 async function init() {
     const tituloEncuesta = document.querySelector('#titulo-encuesta');
     const container = document.querySelector('#container');
+    let isSubmitting = false;
 
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         const activeTab = tabs[0];
@@ -102,6 +103,13 @@ async function init() {
         if (!estado) return;
         estado.textContent = message;
         estado.style.color = isError ? '#b00020' : '#2d6a4f';
+    }
+
+    function setControlsEnabled(enabled) {
+        const controls = container.querySelectorAll("button, input[type='radio']");
+        controls.forEach((control) => {
+            control.disabled = !enabled;
+        });
     }
 
     function obtenerCalificacionSeleccionada() {
@@ -184,14 +192,24 @@ async function init() {
     function activarBotonGuardarSeguro() {
         const btnGuardarSeguro = document.querySelector('#btnGuardarSeguro');
         btnGuardarSeguro.addEventListener('click', function () {
+            if (isSubmitting) return;
+
+            isSubmitting = true;
+            setControlsEnabled(false);
+            setEstado('Validando formulario...');
+
             executeOnActiveTab(injectedValidateAndSave, [], (result) => {
                 if (!result) {
                     setEstado('No se pudo validar el formulario.', true);
+                    isSubmitting = false;
+                    setControlsEnabled(true);
                     return;
                 }
 
                 if (result.ok) {
                     setEstado(`Formulario completo (${result.answered}/${result.total}). Enviando...`);
+                    // Evita que el popup quede activo cuando la pagina ya redirigio.
+                    setTimeout(() => window.close(), 700);
                     return;
                 }
 
@@ -200,6 +218,8 @@ async function init() {
                     : '';
                 const mensajeNota = result.gradeValid ? '' : ' La nota (0-20) es invalida.';
                 setEstado(`No se envio.${mensajeFaltantes}${mensajeNota}`, true);
+                isSubmitting = false;
+                setControlsEnabled(true);
             });
         });
     }
