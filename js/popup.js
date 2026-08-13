@@ -3,27 +3,23 @@ document.addEventListener('DOMContentLoaded', init);
 const PROFILES = [
     {
         id: 'muy-bueno',
-        label: 'Muy bueno',
-        distribution: [2, 15, 43, 40],
+        label: 'Muy bueno (17 - 20)',
         gradeRange: [17, 20]
     },
     {
         id: 'bueno',
-        label: 'Bueno',
-        distribution: [5, 25, 45, 25],
+        label: 'Bueno (12 - 16)',
         gradeRange: [12, 16]
     },
     {
         id: 'regular',
-        label: 'Regular',
-        distribution: [20, 45, 28, 7],
+        label: 'Regular (06 - 11)',
         gradeRange: [6, 11]
     },
     {
         id: 'pesimo',
-        label: 'Pesimo',
-        distribution: [60, 30, 8, 2],
-        gradeRange: [1, 5]
+        label: 'Pésimo (00 - 05)',
+        gradeRange: [0, 5]
     },
 ];
 
@@ -32,7 +28,9 @@ function isSurveyUrl(url) {
         const parsedUrl = new URL(url);
         const isUnsaHost = /(^|\.)extranet\.unsa\.edu\.pe$/i.test(parsedUrl.hostname);
         const isSurveyPath = parsedUrl.pathname.toLowerCase().includes('/encuesta2/form/llenaenc.php');
-        return isUnsaHost && isSurveyPath;
+        const isLocalTest = (parsedUrl.protocol === 'file:' || parsedUrl.hostname === 'localhost' || parsedUrl.hostname === '127.0.0.1')
+            && parsedUrl.pathname.toLowerCase().includes('formato-formulario.html');
+        return (isUnsaHost && isSurveyPath) || isLocalTest;
     } catch {
         return false;
     }
@@ -167,7 +165,8 @@ async function init() {
                     return;
                 }
                 if (result.ok) {
-                    setEstado(`Perfil ${selectedProfile.label}: ${result.answered}/${result.total} preguntas y nota ${result.grade}.`);
+                    const profileName = selectedProfile.label.split(' ')[0];
+                    setEstado(`${profileName}: ${result.answered}/${result.total} preguntas (Promedio: ${result.averageScore}) → Nota: ${result.grade}`);
                 } else {
                     setEstado(result.message || 'La encuesta no se pudo llenar por completo.', true);
                 }
@@ -244,59 +243,85 @@ function injectedFill(profile) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
-    function normalizeDistribution(distribution) {
-        if (!Array.isArray(distribution) || distribution.length !== 4) return [10, 20, 35, 35];
+    function generateCoherentAnswers(targetGrade, totalQuestions, maxOptions = 4) {
+        if (totalQuestions <= 0) return { answers: [], averageScore: 0, grade: targetGrade };
 
-        const parsed = distribution.map((value) => Number(value));
-        const valid = parsed.every((value) => Number.isFinite(value) && value >= 0);
-        if (!valid) return [10, 20, 35, 35];
+        const maxIndex = maxOptions - 1; // 3 para 4 opciones (Nunca=0, A veces=1, Usualmente=2, Siempre=3)
+        const clampedGrade = Math.max(0, Math.min(20, Math.round(targetGrade)));
+        
+        // Puntuación por opción: (index + 1) * 5 => [5, 10, 15, 20]
+        // Para notas entre 0 y 4, la menor respuesta posible en el formulario es 'Nunca' (5 pts)
+        const effectiveGrade = Math.max(5, clampedGrade);
+        const targetIndexSum = Math.round(((effectiveGrade - 5) * totalQuestions) / 5);
+        const clampedIndexSum = Math.max(0, Math.min(maxIndex * totalQuestions, targetIndexSum));
 
-        const total = parsed.reduce((acc, value) => acc + value, 0);
-        if (total <= 0) return [10, 20, 35, 35];
+        // Asignación base uniforme y residuo
+        const baseVal = Math.floor(clampedIndexSum / totalQuestions);
+        const remainder = clampedIndexSum % totalQuestions;
 
-        return parsed.map((value) => value / total);
-    }
-
-    function pickWeightedIndex(weights) {
-        const roll = Math.random();
-        let accumulator = 0;
-
-        for (let i = 0; i < weights.length; i++) {
-            accumulator += weights[i];
-            if (roll <= accumulator) return i;
+        const answers = new Array(totalQuestions).fill(baseVal);
+        for (let i = 0; i < remainder; i++) {
+            answers[i] += 1;
         }
 
-        return weights.length - 1;
+        // Perturbaciones aleatorias manteniendo exactamente invariable la suma de índices (variación humana)
+        const perturbationAttempts = Math.floor(totalQuestions * 0.4);
+        for (let step = 0; step < perturbationAttempts; step++) {
+            const idxA = Math.floor(Math.random() * totalQuestions);
+            const idxB = Math.floor(Math.random() * totalQuestions);
+            if (idxA !== idxB) {
+                if (answers[idxA] < maxIndex && answers[idxB] > 0 && answers[idxA] <= answers[idxB]) {
+                    answers[idxA] += 1;
+                    answers[idxB] -= 1;
+                }
+            }
+        }
+
+        // Fisher-Yates shuffle para distribuir las respuestas de forma completamente orgánica
+        for (let i = answers.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [answers[i], answers[j]] = [answers[j], answers[i]];
+        }
+
+        const totalScore = answers.reduce((acc, idx) => acc + (idx + 1) * 5, 0);
+        const averageScore = Number((totalScore / totalQuestions).toFixed(1));
+
+        return {
+            answers,
+            averageScore,
+            grade: clampedGrade
+        };
     }
 
     const groups = collectSurveyGroups();
     if (groups.length === 0) return { ok: false, message: 'No se encontraron preguntas en la encuesta.' };
 
-    const weights = normalizeDistribution(profile?.distribution);
+    const gradeMin = Number(profile?.gradeRange?.[0]);
+    const gradeMax = Number(profile?.gradeRange?.[1]);
+    const hasValidRange = Number.isFinite(gradeMin) && Number.isFinite(gradeMax) && gradeMin <= gradeMax;
+    const targetGrade = hasValidRange ? randomFromRange(gradeMin, gradeMax) : randomFromRange(12, 16);
 
-    groups.forEach((group) => {
-        const selectedIndex = pickWeightedIndex(weights);
-        const safeIndex = Math.min(selectedIndex, group.length - 1);
+    const { answers, averageScore, grade } = generateCoherentAnswers(targetGrade, groups.length, 4);
+
+    groups.forEach((group, index) => {
+        const optionIndex = answers[index] ?? 0;
+        const safeIndex = Math.min(optionIndex, group.length - 1);
         group[safeIndex].checked = true;
     });
 
     const inputNumber = document.querySelector("input[type='number'][id='calificacion']");
-    let grade = null;
-    const gradeMin = Number(profile?.gradeRange?.[0]);
-    const gradeMax = Number(profile?.gradeRange?.[1]);
-    const hasValidRange = Number.isFinite(gradeMin) && Number.isFinite(gradeMax) && gradeMin <= gradeMax;
-
     if (inputNumber) {
-        if (hasValidRange) {
-            grade = randomFromRange(gradeMin, gradeMax);
-        } else {
-            grade = randomFromRange(10, 16);
-        }
-        if (grade !== null) inputNumber.value = grade;
+        inputNumber.value = grade;
     }
 
     const answered = groups.filter((group) => group.some((radio) => radio.checked)).length;
-    return { ok: answered === groups.length, answered, total: groups.length, grade };
+    return {
+        ok: answered === groups.length,
+        answered,
+        total: groups.length,
+        grade,
+        averageScore
+    };
 }
 
 function injectedValidateAndSave() {
