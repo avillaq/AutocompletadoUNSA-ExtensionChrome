@@ -4,22 +4,26 @@ const PROFILES = [
     {
         id: 'muy-bueno',
         label: 'Muy bueno (17 - 20)',
-        gradeRange: [17, 20]
+        gradeRange: [17, 20],
+        allowedOptions: [2, 3] // Usualmente (2), Siempre (3)
     },
     {
         id: 'bueno',
         label: 'Bueno (12 - 16)',
-        gradeRange: [12, 16]
+        gradeRange: [12, 16],
+        allowedOptions: [1, 3] // A veces (1), Usualmente (2), Siempre (3)
     },
     {
         id: 'regular',
         label: 'Regular (06 - 11)',
-        gradeRange: [6, 11]
+        gradeRange: [6, 11],
+        allowedOptions: [0, 2] // Nunca (0), A veces (1), Usualmente (2)
     },
     {
         id: 'pesimo',
         label: 'Pésimo (00 - 05)',
-        gradeRange: [0, 5]
+        gradeRange: [0, 5],
+        allowedOptions: [0, 1] // Nunca (0), A veces (1)
     },
 ];
 
@@ -243,36 +247,41 @@ function injectedFill(profile) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
-    function generateCoherentAnswers(targetGrade, totalQuestions, maxOptions = 4) {
+    function generateCoherentAnswers(targetGrade, totalQuestions, minOption = 0, maxOption = 3) {
         if (totalQuestions <= 0) return { answers: [], averageScore: 0, grade: targetGrade };
 
-        const maxIndex = maxOptions - 1; // 3 para 4 opciones (Nunca=0, A veces=1, Usualmente=2, Siempre=3)
         const clampedGrade = Math.max(0, Math.min(20, Math.round(targetGrade)));
         
         // Puntuación por opción: (index + 1) * 5 => [5, 10, 15, 20]
         // Para notas entre 0 y 4, la menor respuesta posible en el formulario es 'Nunca' (5 pts)
         const effectiveGrade = Math.max(5, clampedGrade);
         const targetIndexSum = Math.round(((effectiveGrade - 5) * totalQuestions) / 5);
-        const clampedIndexSum = Math.max(0, Math.min(maxIndex * totalQuestions, targetIndexSum));
 
-        // Asignación base uniforme y residuo
-        const baseVal = Math.floor(clampedIndexSum / totalQuestions);
-        const remainder = clampedIndexSum % totalQuestions;
+        const minSum = minOption * totalQuestions;
+        const maxSum = maxOption * totalQuestions;
+        const clampedIndexSum = Math.max(minSum, Math.min(maxSum, targetIndexSum));
 
-        const answers = new Array(totalQuestions).fill(baseVal);
+        // Asignación base uniforme respetando la cota mínima
+        const offsetSum = clampedIndexSum - minSum;
+        const baseOffset = Math.floor(offsetSum / totalQuestions);
+        const remainder = offsetSum % totalQuestions;
+
+        const answers = new Array(totalQuestions).fill(minOption + baseOffset);
         for (let i = 0; i < remainder; i++) {
             answers[i] += 1;
         }
 
-        // Perturbaciones aleatorias manteniendo exactamente invariable la suma de índices (variación humana)
-        const perturbationAttempts = Math.floor(totalQuestions * 0.4);
-        for (let step = 0; step < perturbationAttempts; step++) {
-            const idxA = Math.floor(Math.random() * totalQuestions);
-            const idxB = Math.floor(Math.random() * totalQuestions);
-            if (idxA !== idxB) {
-                if (answers[idxA] < maxIndex && answers[idxB] > 0 && answers[idxA] <= answers[idxB]) {
-                    answers[idxA] += 1;
-                    answers[idxB] -= 1;
+        // Perturbaciones controladas si el rango permitido tiene al menos 3 niveles (ej. 1 a 3 o 0 a 2)
+        if (maxOption - minOption > 1) {
+            const perturbationAttempts = Math.floor(totalQuestions * 0.4);
+            for (let step = 0; step < perturbationAttempts; step++) {
+                const idxA = Math.floor(Math.random() * totalQuestions);
+                const idxB = Math.floor(Math.random() * totalQuestions);
+                if (idxA !== idxB) {
+                    if (answers[idxA] < maxOption && answers[idxB] > minOption && answers[idxA] <= answers[idxB]) {
+                        answers[idxA] += 1;
+                        answers[idxB] -= 1;
+                    }
                 }
             }
         }
@@ -301,10 +310,13 @@ function injectedFill(profile) {
     const hasValidRange = Number.isFinite(gradeMin) && Number.isFinite(gradeMax) && gradeMin <= gradeMax;
     const targetGrade = hasValidRange ? randomFromRange(gradeMin, gradeMax) : randomFromRange(12, 16);
 
-    const { answers, averageScore, grade } = generateCoherentAnswers(targetGrade, groups.length, 4);
+    const minOption = Number.isInteger(profile?.allowedOptions?.[0]) ? profile.allowedOptions[0] : 0;
+    const maxOption = Number.isInteger(profile?.allowedOptions?.[1]) ? profile.allowedOptions[1] : 3;
+
+    const { answers, averageScore, grade } = generateCoherentAnswers(targetGrade, groups.length, minOption, maxOption);
 
     groups.forEach((group, index) => {
-        const optionIndex = answers[index] ?? 0;
+        const optionIndex = answers[index] ?? minOption;
         const safeIndex = Math.min(optionIndex, group.length - 1);
         group[safeIndex].checked = true;
     });
