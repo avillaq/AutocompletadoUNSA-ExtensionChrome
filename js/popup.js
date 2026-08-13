@@ -3,25 +3,25 @@ document.addEventListener('DOMContentLoaded', init);
 const PROFILES = [
     {
         id: 'muy-bueno',
-        label: 'Muy bueno (17 - 20)',
+        label: 'Muy bueno',
         gradeRange: [17, 20],
         allowedOptions: [2, 3] // Usualmente (2), Siempre (3)
     },
     {
         id: 'bueno',
-        label: 'Bueno (12 - 16)',
+        label: 'Bueno',
         gradeRange: [12, 16],
         allowedOptions: [1, 3] // A veces (1), Usualmente (2), Siempre (3)
     },
     {
         id: 'regular',
-        label: 'Regular (06 - 11)',
+        label: 'Regular',
         gradeRange: [6, 11],
         allowedOptions: [0, 2] // Nunca (0), A veces (1), Usualmente (2)
     },
     {
         id: 'pesimo',
-        label: 'Pésimo (00 - 05)',
+        label: 'Pésimo',
         gradeRange: [0, 5],
         allowedOptions: [0, 1] // Nunca (0), A veces (1)
     },
@@ -66,7 +66,6 @@ async function init() {
             return;
         }
 
-        tituloEncuesta.innerHTML = '<p>Encuesta detectada</p>';
         const profilesHtml = PROFILES.map((profile, index) => `
             <label>
                 <input type="radio" name="radio" value="${profile.id}" ${index === 0 ? 'checked' : ''}>
@@ -170,7 +169,7 @@ async function init() {
                 }
                 if (result.ok) {
                     const profileName = selectedProfile.label.split(' ')[0];
-                    setEstado(`${profileName}: ${result.answered}/${result.total} preguntas (Promedio: ${result.averageScore}) → Nota: ${result.grade}`);
+                    setEstado(`${profileName}: ${result.answered}/${result.total} preguntas → Nota: ${result.grade}`);
                 } else {
                     setEstado(result.message || 'La encuesta no se pudo llenar por completo.', true);
                 }
